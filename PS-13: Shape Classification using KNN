@@ -1,0 +1,51 @@
+
+from PIL import Image
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score
+
+data, labels = [], []
+shapes = ["circle", "square", "oval", "rectangle", "overlapped", "star"]
+
+for label, shape in enumerate(shapes):
+    for file in os.listdir(f"shapes/{shape}"):
+        img = Image.open(f"shapes/{shape}/{file}").convert("L")
+        img = img.resize((32, 32))
+        data.append(np.array(img).flatten())
+        labels.append(label)
+
+X = np.array(data) / 255.0
+y = np.array(labels)
+
+knn = KNeighborsClassifier(n_neighbors=1)
+knn.fit(X, y)
+
+y_pred = knn.predict(X)
+
+print(accuracy_score(y, y_pred))
+
+img = Image.open("shapes/test.jpg").convert("L")
+img = img.resize((32, 32))
+img_array = np.array(img).flatten() / 255.0
+
+y_pred1 = knn.predict([img_array])
+print(shapes[y_pred1[0]])
+
+plt.figure(figsize=(8,6))
+
+for i in range(min(6, len(X))):   # FIXED
+    plt.subplot(2, 3, i+1)
+    plt.imshow(X[i].reshape(32,32), cmap='gray')
+    plt.title(f"Pred: {shapes[y_pred[i]]}")
+    plt.axis('off')
+
+img = Image.open("shapes/test.jpg").convert("L")
+img = img.resize((32, 32))
+img_array = np.array(img).flatten() / 255.0
+y_pred1 = knn.predict([img_array])
+print("Predicted shape:", shapes[y_pred1[0]])
+
+plt.suptitle("KNN Shape Classification (No Split)")
+plt.show()
