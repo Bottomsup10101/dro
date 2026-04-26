@@ -1,0 +1,46 @@
+
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import IsolationForest
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+
+df = pd.read_csv("kdd.csv")
+
+df['CLASS'] = df['CLASS'].apply(lambda x: 0 if x == 'normal' else 1)
+
+for col in df.columns:
+    if df[col].dtype == 'object':
+        le = LabelEncoder()
+        df[col] = le.fit_transform(df[col])
+
+X = df.drop('CLASS', axis=1)
+
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+model = IsolationForest(contamination=0.2, random_state=42)
+model.fit(X_scaled)
+
+pred = model.predict(X_scaled)
+pred = np.where(pred == -1, 1, 0)
+
+total = len(pred)
+anomalies = np.sum(pred)
+normal = total - anomalies
+
+print("Total:", total)
+print("Normal:", normal)
+print("Anomalies:", anomalies)
+
+
+print("\nSAMPLE ANOMALIES:")
+anomaly_idx = np.where(pred == 1)[0][:5]
+
+for i in anomaly_idx:
+    print(f"Index {i} → {X.iloc[i].values[:5]}...")
+
+print("\nSAMPLE NORMAL DATA:")
+normal_idx = np.where(pred == 0)[0][:5]
+
+for i in normal_idx:
+    print(f"Index {i} → {X.iloc[i].values[:5]}...")
