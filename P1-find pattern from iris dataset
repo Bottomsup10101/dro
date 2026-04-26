@@ -1,0 +1,52 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+import seaborn as sns
+from sklearn.datasets import load_iris
+from sklearn.metrics import confusion_matrix,classification_report,accuracy_score
+from sklearn.model_selection import train_test_split
+
+iris = load_iris()
+
+df = pd.DataFrame(iris.data,columns = iris.feature_names)
+df['target'] = iris.target
+
+sns.pairplot(df,hue = 'target')
+plt.show()
+
+x = df.drop('target',axis =1)
+y = df['target']
+print(x)
+print(y)
+
+x_train,x_test,y_train,y_test = train_test_split(x,y,test_size =0.2,random_state = 42)
+
+rnd = RandomForestClassifier()
+rnd.fit(x_train,y_train)
+
+y_pred = rnd.predict(x_test)
+
+print("\n Accuracy_Score:",accuracy_score(y_test,y_pred))
+
+print("\nClassification_Report:",classification_report(y_test,y_pred))
+
+pca = PCA(n_components = 2)
+x_sc = pca.fit_transform(x)
+
+plt.scatter(x_sc[:,0],x_sc[:,1],c = y,cmap = 'viridis')
+plt.title("PCA Visualization")
+plt.xlabel("Principal Component 1")
+plt.ylabel("Principal Component 2")
+plt.show()
+
+cm = confusion_matrix(y_test,y_pred)
+sns.heatmap(cm,annot = True,cmap ="Blues")
+plt.title("Confusion Matrix")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.show()
+
+
+
