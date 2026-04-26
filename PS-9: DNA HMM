@@ -1,0 +1,112 @@
+
+import numpy as np
+from collections import defaultdict
+
+def load_data(file_path):
+    sequences = []
+    labels = []
+
+    with open(file_path, "r") as f:
+        for line in f:
+            if line.strip() == "":
+                continue
+
+            parts = line.split(",")
+            label = parts[0].strip()
+            seq = parts[-1].strip()
+
+            sequences.append(seq)
+            labels.append(label)
+
+    return sequences, labels
+
+states = ["E", "I"]
+symbols = ["A", "C", "G", "T"]
+
+state_index = {s: i for i, s in enumerate(states)}
+symbol_index = {s: i for i, s in enumerate(symbols)}
+
+def initialize_counts():
+    transition_counts = np.ones((2, 2))
+    emission_counts = np.ones((2, 4))
+    initial_counts = np.ones(2)
+
+    return transition_counts, emission_counts, initial_counts
+
+def train_hmm(sequences, labels):
+    transition_counts, emission_counts, initial_counts = initialize_counts()
+
+    for seq, label in zip(sequences, labels):
+        split = len(seq) // 2
+        hidden_states = ["E"] * split + ["I"] * (len(seq) - split)
+
+        initial_counts[state_index[hidden_states[0]]] += 1
+
+        for i in range(len(seq)):
+            state = hidden_states[i]
+            symbol = seq[i]
+
+            if symbol not in symbol_index:
+                continue
+
+            emission_counts[state_index[state]][symbol_index[symbol]] += 1
+
+            if i > 0:
+                prev_state = hidden_states[i - 1]
+                transition_counts[state_index[prev_state]][state_index[state]] += 1
+
+    transition_probs = transition_counts / transition_counts.sum(axis=1, keepdims=True)
+    emission_probs = emission_counts / emission_counts.sum(axis=1, keepdims=True)
+    initial_probs = initial_counts / initial_counts.sum()
+
+    return transition_probs, emission_probs, initial_probs
+
+def viterbi(sequence, transition_probs, emission_probs, initial_probs):
+    n_states = len(states)
+    T = len(sequence)
+
+    dp = np.zeros((n_states, T))
+    backpointer = np.zeros((n_states, T), dtype=int)
+
+    for s in range(n_states):
+        sym_idx = symbol_index.get(sequence[0], 0)
+        dp[s, 0] = initial_probs[s] * emission_probs[s][sym_idx]
+
+    for t in range(1, T):
+        for s in range(n_states):
+            sym_idx = symbol_index.get(sequence[t], 0)
+            probs = [
+                dp[prev, t - 1] * transition_probs[prev][s] * emission_probs[s][sym_idx]
+                for prev in range(n_states)
+            ]
+            dp[s, t] = max(probs)
+            backpointer[s, t] = np.argmax(probs)
+
+    best_path = []
+    last_state = np.argmax(dp[:, T - 1])
+    best_path.append(last_state)
+
+    for t in range(T - 1, 0, -1):
+        last_state = backpointer[last_state, t]
+        best_path.append(last_state)
+
+    best_path.reverse()
+
+    return [states[s] for s in best_path]
+
+if _name_ == "_main_":
+    file_path = "Datasets Pra\Datasets Pra\B\DNA_dataset_grpB_2.csv"
+
+    sequences, labels = load_data(file_path)
+
+    transition_probs, emission_probs, initial_probs = train_hmm(sequences, labels)
+
+    print("Transition Matrix:\n", transition_probs)
+    print("Emission Matrix:\n", emission_probs)
+    print("Initial Probabilities:\n", initial_probs)
+
+    test_seq = sequences[0]
+    prediction = viterbi(test_seq, transition_probs, emission_probs, initial_probs)
+
+    print("\nTest Sequence:\n", test_seq)
+    print("\nPredicted States:\n", "".join(prediction))
