@@ -1,0 +1,88 @@
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from hmmlearn import hmm
+
+df = pd.read_csv("Datasets Pra\Datasets Pra\B\weatherHistory_grpB_1.csv")
+
+df = df[['Temperature (C)', 'Humidity']].dropna()
+
+print("Sample Data:\n", df.head())
+
+def categorize_temp(temp):
+    if temp < 10:
+        return 0
+    elif temp < 25:
+        return 1
+    else:
+        return 2
+
+def categorize_humidity(h):
+    if h < 0.4:
+        return 0
+    elif h < 0.7:
+        return 1
+    else:
+        return 2
+
+df['Temp_cat'] = df['Temperature (C)'].apply(categorize_temp)
+df['Hum_cat'] = df['Humidity'].apply(categorize_humidity)
+
+obs_discrete = df['Temp_cat'] * 3 + df['Hum_cat']
+obs_discrete = obs_discrete.values.reshape(-1, 1)
+
+model_discrete = hmm.MultinomialHMM(n_components=3, n_iter=100)
+model_discrete.fit(obs_discrete)
+
+hidden_states_discrete = model_discrete.predict(obs_discrete)
+
+print("\nDiscrete HMM States (first 20):")
+print(hidden_states_discrete[:20])
+
+X = df[['Temperature (C)', 'Humidity']].values
+
+model_continuous = hmm.GaussianHMM(
+    n_components=3,
+    covariance_type="diag",
+    n_iter=100
+)
+
+model_continuous.fit(X)
+
+hidden_states_cont = model_continuous.predict(X)
+
+print("\nContinuous HMM States (first 20):")
+print(hidden_states_cont[:20])
+
+states_map = {
+    0: "Sunny",
+    1: "Cloudy",
+    2: "Rainy"
+}
+
+weather_discrete = [states_map[s] for s in hidden_states_discrete]
+weather_cont = [states_map[s] for s in hidden_states_cont]
+
+print("\nDiscrete Weather (first 10):")
+print(weather_discrete[:10])
+
+print("\nContinuous Weather (first 10):")
+print(weather_cont[:10])
+
+logL_discrete = model_discrete.score(obs_discrete)
+logL_cont = model_continuous.score(X)
+
+print("\nLog Likelihood Comparison:")
+print("Discrete HMM:", logL_discrete)
+print("Continuous HMM:", logL_cont)
+
+plt.figure(figsize=(10, 5))
+plt.plot(hidden_states_discrete[:100], label="Discrete HMM")
+plt.plot(hidden_states_cont[:100], label="Continuous HMM")
+plt.title("Hidden State Comparison")
+plt.xlabel("Time Step")
+plt.ylabel("State")
+plt.legend()
+plt.show()        
+        
