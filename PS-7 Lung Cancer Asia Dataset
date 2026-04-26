@@ -1,0 +1,49 @@
+import pandas as pd
+from pgmpy.models import DiscreteBayesianNetwork
+from pgmpy.estimators import MaximumLikelihoodEstimator
+from pgmpy.inference import VariableElimination
+
+
+df = pd.read_csv(r"Datasets Pra\A\asia_bayesian_dataset_grpA_7.csv")
+
+
+model = DiscreteBayesianNetwork([
+    ("VisitAsia", "Tuberculosis"),
+    ("Smoking", "LungCancer"),
+    ("Smoking", "Bronchitis"),
+    ("Tuberculosis", "Either"),
+    ("LungCancer", "Either"),
+    ("Either", "XRay"),
+    ("Either", "Dyspnea"),
+    ("Bronchitis", "Dyspnea")
+])
+
+model.fit(df, estimator=MaximumLikelihoodEstimator)
+
+infer = VariableElimination(model)
+
+# P(LungCancer | Smoking=1)
+result1 = infer.query(variables=["LungCancer"], evidence={"Smoking": 1})
+print("\nP(LungCancer | Smoking=1):")
+print(result1)
+
+
+# P(Tuberculosis | VisitAsia=1)
+result2 = infer.query(variables=["Tuberculosis"], evidence={"VisitAsia": 1})
+print("\nP(Tuberculosis | VisitAsia=1):")
+print(result2)
+
+# P(Either | XRay=1)
+result3 = infer.query(variables=["Either"], evidence={"XRay": 1})
+print("\nP(Either | XRay=1):")
+print(result3)
+
+
+# P(Dyspnea | Smoking=1, VisitAsia=1)
+result4 = infer.query(
+    variables=["Dyspnea"],
+    evidence={"Smoking": 1, "VisitAsia": 1}
+)
+print("\nP(Dyspnea | Smoking=1, VisitAsia=1):")
+print(result4)
+        
