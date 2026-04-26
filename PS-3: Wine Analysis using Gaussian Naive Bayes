@@ -1,0 +1,30 @@
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score, classification_report
+
+data = pd.read_csv("wine.csv")
+
+print("Dataset Shape:", data.shape)
+print("\nColumns:\n", data.columns)
+
+X = data.drop("quality", axis=1)
+y = data["quality"]
+
+y = (y > 5).astype(int)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+model = GaussianNB()
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+print("\nAccuracy:", accuracy_score(y_test, y_pred))
+print("\nClassification Report:\n")
+print(classification_report(y_test, y_pred))
+
+print("\nSample Predictions:")
+for i in range(5):
+    print("Actual:", y_test.iloc[i], "| Predicted:", y_pred[i])
