@@ -1,24 +1,25 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn import datasets
+import numpy as np 
+import matplotlib.pyplot as plt 
+from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.neighbors import KNeighborsClassifier
 
-iris = datasets.load_iris()
-X = iris.data[:, 2:4]
-y = iris.target
+iris=load_iris()
+X=iris.data[:,2:4]
+y=iris.target
 
-x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.2,random_state=42)
 
-knn = KNeighborsClassifier()
-params = {'n_neighbors': [2, 4, 5, 7, 9]}
+knn=KNeighborsClassifier()
+params={'n_neighbors': [2, 4, 5, 7, 9]}
 
-grid = GridSearchCV(knn, params, cv=5)
-grid.fit(x_train, y_train)
 
-model = grid.best_estimator_
+grid=GridSearchCV(knn,params,cv=5)
+grid.fit(X_train,y_train)
 
-print(model.score(x_test, y_test))
+model=grid.best_estimator_
+
+print(model.score(X_test,y_test))
 
 for i, label in enumerate(iris.target_names):
     plt.scatter(X[y == i, 0], X[y == i, 1], label=label, edgecolor='black')
@@ -27,3 +28,4 @@ plt.xlabel("Petal length")
 plt.ylabel("Petal width")
 plt.legend()
 plt.show()
+
